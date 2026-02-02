@@ -1,45 +1,63 @@
 services:
   openclaw-gateway:
-    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    build: .
+    container_name: openclaw-gateway
+    image: openclaw:local
     environment:
       HOME: /home/node
       TERM: xterm-256color
+      # Token management handled via volume persistence or env injection
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      # LLM Provider Keys (Optional: can be set in UI/CLI too)
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ./vol/config:/home/node/.openclaw
+      - ./vol/workspace:/home/node/.openclaw/workspace
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
-      - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      # - "${OPENCLAW_BRIDGE_PORT:-18790}:18790" # Optional bridge port
     init: true
     restart: unless-stopped
+    networks:
+      - cti-net
     command:
       [
         "node",
         "dist/index.js",
         "gateway",
         "--bind",
-        "${OPENCLAW_GATEWAY_BIND:-lan}",
+        "0.0.0.0", # Bind to all interfaces for Docker
         "--port",
-        "18789",
+        "18789"
       ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openclaw.rule=Host(`openclaw.local`)"
+      - "traefik.http.services.openclaw.loadbalancer.server.port=18789"
 
+  # Optional CLI container for running commands explicitly
   openclaw-cli:
-    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    image: openclaw:local
+    container_name: openclaw-cli
     environment:
       HOME: /home/node
       TERM: xterm-256color
       BROWSER: echo
-      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
-      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
-      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ./vol/config:/home/node/.openclaw
+      - ./vol/workspace:/home/node/.openclaw/workspace
+    networks:
+      - cti-net
     stdin_open: true
     tty: true
     init: true
-    entrypoint: ["node", "dist/index.js"]
+    entrypoint: [ "node", "dist/index.js" ]
+    profiles:
+      - tools # Only start if explicitly requested or needed
+
+networks:
+  cti-net:
+    external: true
+    name: cti-net
