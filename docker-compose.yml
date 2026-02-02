@@ -32,10 +32,8 @@ services:
         "--port",
         "18789"
       ]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.openclaw.rule=Host(`openclaw.local`)"
-      - "traefik.http.services.openclaw.loadbalancer.server.port=18789"
+        "18789"
+      ]
 
   # Optional CLI container for running commands explicitly
   openclaw-cli:
