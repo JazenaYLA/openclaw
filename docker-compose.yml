@@ -32,8 +32,6 @@ services:
         "--port",
         "18789"
       ]
-        "18789"
-      ]
 
   # Optional CLI container for running commands explicitly
   openclaw-cli:
