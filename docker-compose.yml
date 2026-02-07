@@ -1,6 +1,9 @@
 services:
   openclaw-gateway:
-    build: .
+    build:
+      context: .
+      args:
+        OPENCLAW_DOCKER_APT_PACKAGES: ${OPENCLAW_DOCKER_APT_PACKAGES:-}
     container_name: openclaw-gateway
     image: openclaw:local
     environment:
@@ -15,6 +18,8 @@ services:
     volumes:
       - ./vol/config:/home/node/.openclaw
       - ./vol/workspace:/home/node/.openclaw/workspace
+      # Uncomment to persist entire home directory (Power User / Tool Caching)
+      # - ./vol/home:/home/node
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       # - "${OPENCLAW_BRIDGE_PORT:-18790}:18790" # Optional bridge port
@@ -27,6 +32,7 @@ services:
         "node",
         "dist/index.js",
         "gateway",
+        "--allow-unconfigured", # Prevent crash loop on fresh install
         "--bind",
         "0.0.0.0", # Bind to all interfaces for Docker
         "--port",
