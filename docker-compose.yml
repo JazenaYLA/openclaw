@@ -40,6 +40,7 @@ services:
     environment:
       HOME: /home/node
       TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       BROWSER: echo
     volumes:
       - ./vol/config:/home/node/.openclaw
